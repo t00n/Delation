@@ -8,24 +8,40 @@ TOTAL_COMMENT=0
 # echo $#
 # echo $@
 
+function adjust_size()
+{
+	variable=$1
+	size=$2
+	# difference between actual size and wanted size
+	diff=$(($size - ${#variable}))
+	# expand size
+	while [[ diff -ne 0 ]]; do
+		variable=$variable" "
+		diff=$((diff-1))
+	done
+	echo $variable
+}
+
 function display_stats()
 {
 	name=$1
 	count=0
 	count_comment=0
+	# count lines for this person and lines of comments
 	for file in `find . -name "*.$EXTENSION"`; do
 		count=$((count + `git blame $file | grep -c "$name"`))
 		count_comment=$((count_comment + `git blame $file | grep "$COMMENT_SIGN" | grep -c "$name"`))
 	done
+	# compute number of comments on number of lines ratio
 	ratio=0
 	if [ $count -ne 0 ]; then
 		ratio=$(computeCommentRatio $count $count_comment)
 	fi
-	diff=$((16 - ${#name}))
-	while [[ diff -ne 0 ]]; do
-		name=$name" "
-		diff=$((diff-1))
-	done
+	# align columns and display
+	name=$(adjust_size $name 16)
+	count=$(adjust_size $count 6)
+	count_comment=$(adjust_size $count_comment 12)
+	ratio=$(adjust_size $ratio 5)
 	echo "$name | $count | $count_comment | $ratio"
 	TOTAL=$((TOTAL + count))
 	TOTAL_COMMENT=$((TOTAL_COMMENT + count_comment))

@@ -17,12 +17,16 @@ function display_stats()
 		count=$((count + `git blame $file | grep -c "$name"`))
 		count_comment=$((count_comment + `git blame $file | grep "$COMMENT_SIGN" | grep -c "$name"`))
 	done
-	echo "$name : $count " # : $count_comment"
 	ratio=0
 	if [ $count -ne 0 ]; then
 		ratio=$(computeCommentRatio $count $count_comment)
 	fi
-	echo $ratio
+	diff=$((16 - ${#name}))
+	while [[ diff -ne 0 ]]; do
+		name=$name" "
+		diff=$((diff-1))
+	done
+	echo "$name | $count | $count_comment | $ratio"
 	TOTAL=$((TOTAL + count))
 	TOTAL_COMMENT=$((TOTAL_COMMENT + count_comment))
 }
@@ -44,13 +48,15 @@ function main()
 	echo -e "\033[32mCommits par personne : \033[0m"
 	git shortlog -sn | cat
 
+	echo -e "\n"
 	echo -e "\033[32mCalcul du nombre de lignes par personne...\033[0m"
-
+	echo -e "\033[32mNom              | Lignes | Commentaires | Ratio\033[0m"
 	IFS=$'\n'
 	for name in `git shortlog -s | cut -f2`; do
 		display_stats $name
 	done 
 
+	echo -e "\n"
 	echo -e "\033[32mTotal : \033[0m"
 	echo $TOTAL
 	echo $TOTAL_COMMENT

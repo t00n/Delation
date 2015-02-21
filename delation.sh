@@ -5,7 +5,10 @@ COMMENT_SIGN=$2
 REPERTORY=$3
 TOTAL=0
 TOTAL_COMMENT=0
-function display()
+# echo $#
+# echo $@
+
+function display_stats()
 {
 	name=$1
 	count=0
@@ -15,30 +18,44 @@ function display()
 		count_comment=$((count_comment + `git blame $file | grep "$COMMENT_SIGN" | grep -c "$name"`))
 	done
 	echo "$name : $count " # : $count_comment"
+	ratio=0
 	if [ $count -ne 0 ]; then
-		echo "scale=3;$count_comment/$count" | bc
-	else
-		echo 0
+		ratio=$(computeCommentRatio $count $count_comment)
 	fi
+	echo $ratio
 	TOTAL=$((TOTAL + count))
 	TOTAL_COMMENT=$((TOTAL_COMMENT + count_comment))
 }
 
-cd $REPERTORY
+function computeCommentRatio()
+{
+	count=$1
+	count_comment=$2
+	echo $(bc <<< "scale=3;$count_comment/$count")
+}
 
-echo -e "\033[31mDISCLAIMER : \033[0mCes chiffres sont purement informatifs."
-echo "             Le nombre de lignes peut varier incroyablement en fonction de refactoring divers."
-echo -e "\033[32mCommits\033[0m : `git log | grep "Author:" | wc -l`"
-echo -e "\033[32mCommits par personne : \033[0m"
-git shortlog -sn | cat
+function main()
+{
+	cd $REPERTORY
 
-echo "Calcul du nombre de lignes par personne..."
+	echo -e "\033[31mDISCLAIMER : \033[0mCes chiffres sont purement informatifs."
+	echo "             Le nombre de lignes peut varier incroyablement en fonction de refactoring divers."
+	echo -e "\033[32mCommits\033[0m : `git log | grep "Author:" | wc -l`"
+	echo -e "\033[32mCommits par personne : \033[0m"
+	git shortlog -sn | cat
 
-IFS=$'\n'
-for name in `git shortlog -s | cut -f2`; do
-	display $name
-done 
+	echo -e "\033[32mCalcul du nombre de lignes par personne...\033[0m"
 
-echo $TOTAL
-echo $TOTAL_COMMENT
-echo "scale=3;$TOTAL_COMMENT/$TOTAL" | bc
+	IFS=$'\n'
+	for name in `git shortlog -s | cut -f2`; do
+		display_stats $name
+	done 
+
+	echo -e "\033[32mTotal : \033[0m"
+	echo $TOTAL
+	echo $TOTAL_COMMENT
+	echo $(computeCommentRatio $TOTAL $TOTAL_COMMENT)
+}
+
+main
+

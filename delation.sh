@@ -1,6 +1,8 @@
 #!/bin/bash
 
 EXTENSION=$1
+COMMENT_SIGN=$2
+REPERTORY=$3
 TOTAL=0
 TOTAL_COMMENT=0
 function display()
@@ -10,13 +12,19 @@ function display()
 	count_comment=0
 	for file in `find . -name "*.$EXTENSION"`; do
 		count=$((count + `git blame $file | grep -c "$name"`))
-		count_comment=$((count_comment + `git blame $file | grep "*" | grep -c "$name"`))
+		count_comment=$((count_comment + `git blame $file | grep "$COMMENT_SIGN" | grep -c "$name"`))
 	done
 	echo "$name : $count " # : $count_comment"
-	#echo "scale=5;$count_comment/$count" | bc
+	if [ $count -ne 0 ]; then
+		echo "scale=3;$count_comment/$count" | bc
+	else
+		echo 0
+	fi
 	TOTAL=$((TOTAL + count))
 	TOTAL_COMMENT=$((TOTAL_COMMENT + count_comment))
 }
+
+cd $REPERTORY
 
 echo -e "\033[31mDISCLAIMER : \033[0mCes chiffres sont purement informatifs."
 echo "             Le nombre de lignes peut varier incroyablement en fonction de refactoring divers."
@@ -32,5 +40,5 @@ for name in `git shortlog -s | cut -f2`; do
 done 
 
 echo $TOTAL
-echo #$TOTAL_COMMENT
-echo #"scale=5;$TOTAL_COMMENT/$TOTAL" | bc
+echo $TOTAL_COMMENT
+echo "scale=3;$TOTAL_COMMENT/$TOTAL" | bc

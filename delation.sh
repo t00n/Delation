@@ -22,6 +22,13 @@ function adjust_size()
 	echo $variable
 }
 
+function computeCommentRatio()
+{
+	count=$1
+	count_comment=$2
+	echo $(bc <<< "scale=3;$count_comment/$count")
+}
+
 function display_stats()
 {
 	name=$1
@@ -47,13 +54,6 @@ function display_stats()
 	TOTAL_COMMENT=$((TOTAL_COMMENT + count_comment))
 }
 
-function computeCommentRatio()
-{
-	count=$1
-	count_comment=$2
-	echo $(bc <<< "scale=3;$count_comment/$count")
-}
-
 function main()
 {
 	cd $REPERTORY
@@ -72,11 +72,7 @@ function main()
 		display_stats $name
 	done 
 
-	echo -e "\n"
-	echo -e "\033[32mTotal : \033[0m"
-	echo $TOTAL
-	echo $TOTAL_COMMENT
-	echo $(computeCommentRatio $TOTAL $TOTAL_COMMENT)
+	echo -e $(adjust_size "Total" 16) "|" $(adjust_size $TOTAL 6) "|" $(adjust_size $TOTAL_COMMENT 12) "|" $(adjust_size $(computeCommentRatio $TOTAL $TOTAL_COMMENT) 5) 
 }
 
 main

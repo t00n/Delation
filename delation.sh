@@ -3,12 +3,14 @@
 EXTENSION=$1
 COMMENT_SIGN=$2
 REPERTORY=$3
-TOTAL=0
-TOTAL_COMMENT=0
 # echo $#
 # echo $@
 
-function adjust_size()
+declare -x names=()
+declare -x -A count_lines
+declare -x -A count_comments
+
+function format()
 {
 	variable=$1
 	size=$2
@@ -29,29 +31,38 @@ function computeCommentRatio()
 	echo $(bc <<< "scale=3;$count_comment/$count")
 }
 
-function display_stats()
+function compute_all()
 {
-	name=$1
-	count=0
-	count_comment=0
 	# count lines for this person and lines of comments
 	for file in `find . -name "*.$EXTENSION"`; do
-		count=$((count + `git blame $file | grep -c "$name"`))
-		count_comment=$((count_comment + `git blame $file | grep "$COMMENT_SIGN" | grep -c "$name"`))
+		for name in "${names[@]}"; do
+			real_name=$(sed s/_/\ /g <<< $name)
+			count_lines[$name]=$((${count_lines[$name]} + `git blame $file | grep -c "$real_name"`))
+			count_comments[$name]=$((${count_comments[$name]} + `git blame $file | grep "$COMMENT_SIGN" | grep -c "$real_name"`))
+		done
 	done
-	# compute number of comments on number of lines ratio
-	ratio=0
-	if [ $count -ne 0 ]; then
-		ratio=$(computeCommentRatio $count $count_comment)
-	fi
-	# align columns and display
-	name=$(adjust_size $name 16)
-	count=$(adjust_size $count 6)
-	count_comment=$(adjust_size $count_comment 12)
-	ratio=$(adjust_size $ratio 5)
-	echo "$name | $count | $count_comment | $ratio"
-	TOTAL=$((TOTAL + count))
-	TOTAL_COMMENT=$((TOTAL_COMMENT + count_comment))
+}
+
+function display_all()
+{
+	total_lines=0
+	total_comments=0
+	for name in "${names[@]}"; do
+		# compute number of comments on number of lines ratio
+		ratio=0
+		if [ ${count_lines[$name]} -ne 0 ]; then
+			ratio=$(computeCommentRatio ${count_lines[$name]} ${count_comments[$name]})
+		fi
+		# align columns and display
+		count=$(format ${count_lines[$name]} 6)
+		count_comment=$(format ${count_comments[$name]} 12)
+		name=$(format $name 25)
+		ratio=$(format $ratio 5)
+		echo "$name | $count | $count_comment | $ratio"
+		total_lines=$((total_lines + count))
+		total_comments=$((total_comments + count_comment))
+	done
+	echo -e $(format "Total" 25) "|" $(format $total_lines 6) "|" $(format $total_comments 12) "|" $(format $(computeCommentRatio $total_lines $total_comments) 5) 
 }
 
 function main()
@@ -69,10 +80,13 @@ function main()
 	echo -e "\033[32mNom              | Lignes | Commentaires | Ratio\033[0m"
 	IFS=$'\n'
 	for name in `git shortlog -s | cut -f2`; do
-		display_stats $name
-	done 
-
-	echo -e $(adjust_size "Total" 16) "|" $(adjust_size $TOTAL 6) "|" $(adjust_size $TOTAL_COMMENT 12) "|" $(adjust_size $(computeCommentRatio $TOTAL $TOTAL_COMMENT) 5) 
+		name=($(sed s/\ /_/g <<< $name))
+		names+=($name)
+		count_lines[$name]=0
+		count_comments[$name]=0
+	done
+	compute_all
+	display_all
 }
 
 main

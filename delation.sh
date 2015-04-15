@@ -1,8 +1,8 @@
 #!/bin/bash
 
-EXTENSION=$1
-COMMENT_SIGN=$2
-REPERTORY=$3
+declare EXTENSION=$1
+declare COMMENT_SIGN=$2
+declare REPERTORY=$3
 # echo $#
 # echo $@
 
@@ -77,7 +77,7 @@ function main()
 
 	echo -e "\n"
 	echo -e "\033[32mCalcul du nombre de lignes par personne...\033[0m"
-	echo -e "\033[32mNom              | Lignes | Commentaires | Ratio\033[0m"
+	echo -e "\033[32mNom                       | Lignes | Commentaires | Ratio\033[0m"
 	IFS=$'\n'
 	for name in `git shortlog -s | cut -f2`; do
 		name=($(sed s/\ /_/g <<< $name))

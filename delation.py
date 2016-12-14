@@ -36,18 +36,17 @@ def main(directory, branch='master'):
 	tree = repo.heads[branch].commit.tree
 	def compute_lines(tree):
 		for blob in tree.blobs:
-			for commit, lines in repo.blame(branch, blob.path):
-				try:
-					file_content = "".join(lines)					
+			try:
+				file_content = ""
+				for commit, lines in repo.blame(branch, blob.path):
 					stats_by_user.loc[commit.committer.name].lines += len(lines)
-					try:
-						lexer = guess_lexer(file_content)
-						stats_by_user.loc[commit.committer.name].comments += len([line for line in lines 
-																			   if any([x[0] in Comment for x in lexer.get_tokens(line)])])
-					except ClassNotFound:
-						pass
-						# print("File {} : language unknown".format(blob.path))
-				except TypeError:
-					print("File {} is binary : skipped".format(blob.path))
+					file_content += "\n".join(lines) + "\n"
+				try:
+					lexer = guess_lexer(file_content)
+					stats_by_user.loc[commit.committer.name].comments += sum([x[0] in Comment for x in lexer.get_tokens(file_content)])
+				except ClassNotFound:
+					print("File {} : language unknown".format(blob.path))
+			except TypeError:
+				print("File {} is binary : skipped".format(blob.path))
 	walk_tree(compute_lines, tree)
 	pretty_print(stats_by_user)

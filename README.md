@@ -14,6 +14,6 @@ Well, it needs python 3 and the requirements mentioned in the file.
 
 ## Usage
 
-	./delation.py <comment> <directory>
+	./delation.py <directory>
 
-where ```<comment>``` is the string that denotes comments in the code and ```<directory>``` is the root of a git repo.
+where ```<directory>``` is the root of a git repo.

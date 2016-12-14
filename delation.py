@@ -31,12 +31,12 @@ def main(comment, directory):
 			stats_by_user.loc[commit.committer.name] = 0
 		stats_by_user.loc[commit.committer.name].commits += 1
 	tree = repo.heads.master.commit.tree
-	def update_stats(tree):
+	def compute_lines(tree):
 		for blob in tree.blobs:
 			for commit, lines in repo.blame('HEAD', blob.path):
 				stats_by_user.loc[commit.committer.name].lines += len(lines)
 				stats_by_user.loc[commit.committer.name].comments += len([line for line in lines 
 																		   if isinstance(line, str) 
 																		   and comment in line])
-	walk_tree(update_stats, tree)
+	walk_tree(compute_lines, tree)
 	pretty_print(stats_by_user)

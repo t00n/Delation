@@ -16,10 +16,9 @@ def walk_tree(f, tree):
 
 
 @dispatch_command
-@arg('extension')
 @arg('comment')
 @arg('directory')
-def main(extension, comment, directory):
+def main(comment, directory):
 	repo = Repo(directory)
 	stats_by_user = defaultdict(lambda: dict(commits=0, lines=0, comments=0))
 	for commit in repo.commit().iter_items(repo, 'HEAD'):

@@ -23,17 +23,18 @@ def pretty_print(stats):
 @dispatch_command
 @arg('comment')
 @arg('directory')
-def main(comment, directory):
+@arg('--branch')
+def main(comment, directory, branch='master'):
 	repo = Repo(directory)
 	stats_by_user = pd.DataFrame(columns=['commits', 'lines', 'comments']).astype(np.int64)
-	for commit in repo.commit().iter_items(repo, 'HEAD'):
+	for commit in repo.commit().iter_items(repo, branch):
 		if commit.committer.name not in stats_by_user.index:
 			stats_by_user.loc[commit.committer.name] = 0
 		stats_by_user.loc[commit.committer.name].commits += 1
-	tree = repo.heads.master.commit.tree
+	tree = repo.heads[branch].commit.tree
 	def compute_lines(tree):
 		for blob in tree.blobs:
-			for commit, lines in repo.blame('HEAD', blob.path):
+			for commit, lines in repo.blame(branch, blob.path):
 				stats_by_user.loc[commit.committer.name].lines += len(lines)
 				stats_by_user.loc[commit.committer.name].comments += len([line for line in lines 
 																		   if isinstance(line, str) 

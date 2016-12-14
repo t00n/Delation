@@ -3,6 +3,7 @@ gitdb2==2.0.0
 GitPython==2.1.1
 numpy==1.11.2
 pandas==0.19.1
+Pygments==2.1.3
 python-dateutil==2.6.0
 pytz==2016.10
 six==1.10.0

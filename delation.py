@@ -4,6 +4,9 @@ from argh import *
 from git import *
 import pandas as pd
 import numpy as np
+from pygments.token import Comment
+from pygments.lexers import guess_lexer
+from pygments.util import ClassNotFound
 
 def walk_tree(f, tree):
 	res = f(tree)
@@ -21,10 +24,9 @@ def pretty_print(stats):
 
 
 @dispatch_command
-@arg('comment')
 @arg('directory')
 @arg('--branch')
-def main(comment, directory, branch='master'):
+def main(directory, branch='master'):
 	repo = Repo(directory)
 	stats_by_user = pd.DataFrame(columns=['commits', 'lines', 'comments']).astype(np.int64)
 	for commit in repo.commit().iter_items(repo, branch):
@@ -35,9 +37,17 @@ def main(comment, directory, branch='master'):
 	def compute_lines(tree):
 		for blob in tree.blobs:
 			for commit, lines in repo.blame(branch, blob.path):
-				stats_by_user.loc[commit.committer.name].lines += len(lines)
-				stats_by_user.loc[commit.committer.name].comments += len([line for line in lines 
-																		   if isinstance(line, str) 
-																		   and comment in line])
+				try:
+					file_content = "".join(lines)					
+					stats_by_user.loc[commit.committer.name].lines += len(lines)
+					try:
+						lexer = guess_lexer(file_content)
+						stats_by_user.loc[commit.committer.name].comments += len([line for line in lines 
+																			   if any([x[0] in Comment for x in lexer.get_tokens(line)])])
+					except ClassNotFound:
+						pass
+						# print("File {} : language unknown".format(blob.path))
+				except TypeError:
+					print("File {} is binary : skipped".format(blob.path))
 	walk_tree(compute_lines, tree)
 	pretty_print(stats_by_user)
